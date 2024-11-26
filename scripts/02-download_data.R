@@ -11,16 +11,26 @@
 #### Workspace setup ####
 library(opendatatoronto)
 library(tidyverse)
-# [...UPDATE THIS...]
+library(dplyr)
 
 #### Download data ####
-# [...ADD CODE HERE TO DOWNLOAD...]
+# get package
+package <- show_package("e271cdae-8788-4980-96ce-6a5c95bc6618")
+package
 
+# List the resources available in this package
+resources <- list_package_resources(package)
 
-asdasdassd
+# View the names and formats of the resources
+resource_id <- resources %>%
+  filter(name == "ttc-bus-delay-data-2023", format == "XLSX") %>%
+  pull(id)
+
+# Download the Excel file and save it to the raw_data folder
+bus_delay_raw_data <- get_resource(resource_id)
+
 #### Save data ####
-# [...UPDATE THIS...]
 # change the_raw_data to whatever name you assigned when you downloaded it.
-write_csv(the_raw_data, "inputs/data/raw_data.csv") 
+write.csv(bus_delay_raw_data, "data/01-raw_data/bus_delay_raw_data_2023.csv", row.names = FALSE)
 
          
