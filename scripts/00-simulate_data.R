@@ -10,43 +10,54 @@
 
 
 #### Workspace setup ####
-library(tidyverse)
-set.seed(853)
+library(dplyr)
+library(lubridate)
 
+#### Define Simulation Parameters ####
+set.seed(397)  # For reproducibility
 
-#### Simulate data ####
-# State names
-states <- c(
-  "New South Wales",
-  "Victoria",
-  "Queensland",
-  "South Australia",
-  "Western Australia",
-  "Tasmania",
-  "Northern Territory",
-  "Australian Capital Territory"
-)
+# Number of simulated records
+n <- 10000
 
-# Political parties
-parties <- c("Labor", "Liberal", "Greens", "National", "Other")
+# Define variables
+routes <- paste("Route", sample(1:100, 20, replace = TRUE))  # Random route names
+stops <- paste("Stop", sample(1:500, 50, replace = TRUE))    # Random stop names
+causes <- c("Mechanical", "Traffic", "Weather", "Collision", "Other")
+locations <- paste("Location", sample(1:200, 20, replace = TRUE))  # Random locations
 
-# Create a dataset by randomly assigning states and parties to divisions
-analysis_data <- tibble(
-  division = paste("Division", 1:151),  # Add "Division" to make it a character
-  state = sample(
-    states,
-    size = 151,
-    replace = TRUE,
-    prob = c(0.25, 0.25, 0.15, 0.1, 0.1, 0.1, 0.025, 0.025) # Rough state population distribution
-  ),
-  party = sample(
-    parties,
-    size = 151,
-    replace = TRUE,
-    prob = c(0.40, 0.40, 0.05, 0.1, 0.05) # Rough party distribution
+# Generate random delay durations based on cause
+generate_delay <- function(cause) {
+  case_when(
+    cause == "Mechanical" ~ abs(rnorm(1, mean = 15, sd = 5)),  # Avg 15 min
+    cause == "Traffic" ~ abs(rnorm(1, mean = 10, sd = 3)),     # Avg 10 min
+    cause == "Weather" ~ abs(rnorm(1, mean = 20, sd = 7)),     # Avg 20 min
+    cause == "Collision" ~ abs(rnorm(1, mean = 25, sd = 10)),  # Avg 25 min
+    TRUE ~ abs(rnorm(1, mean = 5, sd = 2))                     # Other causes
   )
+}
+
+#### Generate Simulated Data ####
+simulated_data <- tibble(
+  Date = sample(seq(as.Date("2023-01-01"), as.Date("2023-12-31"), by = "day"), n, replace = TRUE),
+  Time = hms::hms(hour = sample(0:23, n, replace = TRUE), 
+                  minute = sample(0:59, n, replace = TRUE)),
+  Route = sample(routes, n, replace = TRUE),
+  Stop = sample(stops, n, replace = TRUE),
+  Delay_Cause = sample(causes, n, replace = TRUE, prob = c(0.3, 0.4, 0.1, 0.1, 0.1)),  # Weighted probabilities
+  Delay_Minutes = sapply(sample(causes, n, replace = TRUE), generate_delay),
+  Location = sample(locations, n, replace = TRUE)
 )
 
+#### Post-Processing ####
+# Round delay minutes to nearest integer
+simulated_data <- simulated_data %>% 
+  mutate(Delay_Minutes = round(Delay_Minutes, 0))
 
-#### Save data ####
-write_csv(analysis_data, "data/00-simulated_data/simulated_data.csv")
+# Sort by date and time for realism
+simulated_data <- simulated_data %>% arrange(Date, Time)
+
+#### Inspect the Simulated Data ####
+head(simulated_data)
+
+#### Save the Simulated Dataset ####
+write.csv(simulated_data, "data/00-simulated_data/simulated_ttc_bus_delay_data.csv", row.names = FALSE)
