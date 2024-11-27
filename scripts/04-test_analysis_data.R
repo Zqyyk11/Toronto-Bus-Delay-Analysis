@@ -9,61 +9,79 @@
 
 
 #### Workspace setup ####
-library(tidyverse)
+# Install and load required libraries
 library(testthat)
+library(dplyr)
 
-data <- read_csv("data/02-analysis_data/analysis_data.csv")
+bus_delay_data <- read.csv(here::here('data/02-analysis_data/bus_delay_clean_data_2023.csv'))
 
 
-#### Test data ####
-# Test that the dataset has 151 rows - there are 151 divisions in Australia
-test_that("dataset has 151 rows", {
-  expect_equal(nrow(analysis_data), 151)
+#### Test cases ####
+### 1. Test for Missing Values ###
+test_that("No missing values in critical columns", {
+  expect_true(all(!is.na(bus_delay_data$min_delay)), info = "min_delay column has missing values")
+  expect_true(all(!is.na(bus_delay_data$location)), info = "location column has missing values")
+  expect_true(all(!is.na(bus_delay_data$incident)), info = "incident column has missing values")
 })
 
-# Test that the dataset has 3 columns
-test_that("dataset has 3 columns", {
-  expect_equal(ncol(analysis_data), 3)
+### 2. Test for Data Type Validity ###
+test_that("Data types are correct", {
+  expect_type(bus_delay_data$date, "character") # Dates should be stored as character or Date
+  expect_type(bus_delay_data$min_delay, "integer") # Delay should be numeric
+  expect_type(bus_delay_data$route, "integer") # Route should be character
+  expect_type(bus_delay_data$incident, "character") # Incident should be character
 })
 
-# Test that the 'division' column is character type
-test_that("'division' is character", {
-  expect_type(analysis_data$division, "character")
+### 3. Test for Logical Value Ranges ###
+test_that("Numeric columns have logical ranges", {
+  expect_true(all(bus_delay_data$min_delay >= 0), info = "min_delay contains negative values")
+  expect_true(all(bus_delay_data$min_gap >= 0), info = "min_gap contains negative values")
+  expect_true(all(bus_delay_data$hour >= 0 & bus_delay_data$hour <= 23), info = "hour column has invalid values")
 })
 
-# Test that the 'party' column is character type
-test_that("'party' is character", {
-  expect_type(analysis_data$party, "character")
+### 4. Test for Unique and Expected Values ###
+test_that("Categorical columns have expected levels", {
+  # Define the expected levels for 'day'
+  expected_days <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+  
+  # Check that all values in 'day' are in the expected set
+  expect_true(all(bus_delay_data$day %in% expected_days), info = "Unexpected day values found in the data")
+  
+  # Optionally, ensure all expected days are represented in the dataset
+  expect_true(all(expected_days %in% bus_delay_data$day), info = "Not all expected days are represented in the data")
 })
 
-# Test that the 'state' column is character type
-test_that("'state' is character", {
-  expect_type(analysis_data$state, "character")
+### 5. Test for Duplicates ###
+test_that("No duplicate rows exist", {
+  expect_true(nrow(bus_delay_data) == nrow(distinct(bus_delay_data)), info = "Dataset contains duplicate rows")
 })
 
-# Test that there are no missing values in the dataset
-test_that("no missing values in dataset", {
-  expect_true(all(!is.na(analysis_data)))
+### 6. Test for Missing Categories ###
+test_that("All expected delay categories are present", {
+  expected_delay_categories <- c("Short", "Moderate", "Long")
+  
+  if (!setequal(unique(bus_delay_data$delay_category), expected_delay_categories)) {
+    fail("Missing or unexpected delay categories found in the data")
+  }
+  
+  expect_setequal(unique(bus_delay_data$delay_category), expected_delay_categories)
 })
 
-# Test that 'division' contains unique values (no duplicates)
-test_that("'division' column contains unique values", {
-  expect_equal(length(unique(analysis_data$division)), 151)
+### 7. Test for Logical Relationships ###
+test_that("Delays correspond logically to incidents", {
+  expect_true(all(bus_delay_data$min_delay > 0 | bus_delay_data$incident == "Not Specified"), 
+              info = "Incidents without delays are not logically valid")
 })
 
-# Test that 'state' contains only valid Australian state or territory names
-valid_states <- c("New South Wales", "Victoria", "Queensland", "South Australia", "Western Australia", 
-                  "Tasmania", "Northern Territory", "Australian Capital Territory")
-test_that("'state' contains valid Australian state names", {
-  expect_true(all(analysis_data$state %in% valid_states))
+### 8. Test for Outliers in Delay ###
+test_that("No unreasonable outliers in min_delay", {
+  max_reasonable_delay <- 1000  # Define a maximum reasonable delay
+  unreasonable_delays <- bus_delay_data$min_delay[bus_delay_data$min_delay > max_reasonable_delay]
+  
+  if (length(unreasonable_delays) > 0) {
+    fail(paste("Unreasonably large delays found:", paste(unreasonable_delays, collapse = ", ")))
+  }
+  
+  expect_true(all(bus_delay_data$min_delay <= max_reasonable_delay))
 })
 
-# Test that there are no empty strings in 'division', 'party', or 'state' columns
-test_that("no empty strings in 'division', 'party', or 'state' columns", {
-  expect_false(any(analysis_data$division == "" | analysis_data$party == "" | analysis_data$state == ""))
-})
-
-# Test that the 'party' column contains at least 2 unique values
-test_that("'party' column contains at least 2 unique values", {
-  expect_true(length(unique(analysis_data$party)) >= 2)
-})

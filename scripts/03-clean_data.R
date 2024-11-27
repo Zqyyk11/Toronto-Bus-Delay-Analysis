@@ -43,7 +43,6 @@ bus_delay_data <- bus_delay_data %>%
 # Add derived columns (hour and delay category)
 bus_delay_data <- bus_delay_data %>%
   mutate(
-    hour = hour(time),  # Extract hour from time
     delay_category = case_when(
       min_delay <= 5 ~ "Short",
       min_delay <= 15 ~ "Moderate",
@@ -72,3 +71,4 @@ bus_delay_data %>%
     unique_locations = n_distinct(location),
     unique_incidents = n_distinct(incident)
   )
+
