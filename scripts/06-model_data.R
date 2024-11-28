@@ -24,7 +24,7 @@ analysis_reduced <- bus_delay_data |>
 #### Model data ####
 # Define the model using stan_glm
 delay_model <- stan_glm(
-  min_delay ~ incident + location + min_gap,
+  min_delay ~ incident + day + min_gap,
   data = analysis_reduced,
   family = gaussian(link = 'identity'),  
   prior = normal(location = 0, scale = 2.5, autoscale = TRUE),
