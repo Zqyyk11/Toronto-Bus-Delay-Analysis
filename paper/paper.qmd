@@ -1,15 +1,15 @@
 ---
-title: "My title"
-subtitle: "My subtitle if needed"
+title: "Predicting Bus Delays in Toronto:"
+subtitle: " A Bayesian Modeling Approach"
 author: 
-  - First author
-  - Another author
-thanks: "Code and data are available at: [https://github.com/RohanAlexander/starter_folder](https://github.com/RohanAlexander/starter_folder)."
+  - Charlie Zhang
+thanks: "Code and data are available at: [https://github.com/Zqyyk11/Toronto-Bus-Delay-Analysis](https://github.com/Zqyyk11/Toronto-Bus-Delay-Analysis)."
 date: today
 date-format: long
-abstract: "First sentence. Second sentence. Third sentence. Fourth sentence."
+abstract: "Efficient public transit systems are critical to urban mobility. This study explores the key factors influencing bus delays in Toronto using a Bayesian approach. A dataset of bus delays was analyzed, focusing on incidents, days of the week, and bus gaps as primary predictors. A simplified Bayesian regression model achieved convergence, yielding interpretable insights into how these factors affect delay durations. The findings highlight the potential for predictive models to assist in optimizing transit operations."
 format: pdf
 number-sections: true
+toc: true
 bibliography: references.bib
 ---
 
@@ -19,237 +19,286 @@ bibliography: references.bib
 #| message: false
 
 library(tidyverse)
-library(palmerpenguins)
+library(ggplot2)
+library(rstanarm)
+library(here)
+library(modelsummary)
+
+analysis_reduced <- read_csv(here::here("data/02-analysis_data/bus_delay_clean_data_2023.csv"))
 ```
 
 
 # Introduction
 
-Overview paragraph
+  Public transit systems are critical to the functioning of urban areas, providing mobility to millions of residents and contributing to economic and environmental sustainability. However, delays in public transit services remain a significant challenge, impacting user satisfaction, operational efficiency, and city-wide productivity. In the case of Toronto, the Toronto Transit Commission (TTC) operates one of the largest transit networks in North America, where delays are influenced by diverse factors such as mechanical issues, external incidents, and operational gaps between buses. Understanding the causes and dynamics of bus delays is essential for improving service reliability and optimizing transit operations. Prior studies have highlighted factors like traffic congestion, peak-hour demand, and vehicle reliability as primary contributors to delays in transit systems. However, these studies often rely on frequentist methods, which may lack flexibility in capturing the uncertainty and variability inherent in complex urban transit systems. This study employs a Bayesian regression model to analyze TTC bus delays, focusing on three key predictors: incident type, day of the week, and inter-bus gaps (min_gap). The Bayesian framework provides a robust mechanism for incorporating prior knowledge and quantifying uncertainty, making it particularly suited for transportation research where variability is high.
+  
+The primary objectives of this research are:
 
-Estimand paragraph
+- **To** identify the most significant factors influencing bus delays in Toronto.
+- **To** build a predictive model that can support real-time decision-making and scheduling improvements.
+- **To** provide actionable insights for transit managers to mitigate delays and enhance service reliability.
 
-Results paragraph
-
-Why it matters paragraph
-
-Telegraphing paragraph: The remainder of this paper is structured as follows. @sec-data....
-
-
-
-
-
+By narrowing the focus to the most impactful variables and using a Bayesian approach, this study contributes to a growing body of work aimed at modernizing urban transit systems through data-driven strategies. The results offer a predictive framework that can be extended to other cities and integrated with real-time transit management systems.
 
 # Data {#sec-data}
 
 ## Overview
-
-We use the statistical programming language R [@citeR].... Our data [@shelter].... Following @tellingstories, we consider...
-
-Overview text
+  We use the statistical programming language R [@citeR] to analyze TTC bus delay data obtained from Toronto’s open data repository [@TTCData]. This dataset captures transit delays recorded by the Toronto Transit Commission (TTC) and includes information on delay causes (e.g., mechanical issues, security), day of the week, and inter-bus gaps. Following the guidelines outlined in @tellingstories, we carefully preprocess and explore the data before modeling.
+To conduct the analysis, we utilized several R libraries that facilitated data preprocessing, modeling, and visualization. The tidyverse [@tidyverse] provided a comprehensive suite of tools for data manipulation and visualization, with dplyr[@dplyr] used for data wrangling and ggplot2[@ggplot2] for creating informative visualizations. The readr package [@readr] enabled efficient loading of the dataset into R. For Bayesian modeling, we employed the rstanarm package [@rstanarm], which allowed flexible regression modeling using weakly informative priors via the stan_glm function. The modelsummary package [@modelsummary] was used to generate clean, publication-ready tables of model summaries and posterior estimates, while here [@here] simplified file path management, ensuring compatibility and organization across different systems. Together, these libraries provided a robust framework for handling the data, implementing the Bayesian model, and effectively presenting the results.
+  The dataset consists of over 50,000 records of delay incidents, from which we selected a random subset of 2,500 for computational efficiency. Key predictors include `incident`, `day`, and `min_gap`, with the outcome variable `min_delay`, representing delay duration in minutes.
 
 ## Measurement
-	
-Some paragraphs about how we go from a phenomena in the world to an entry in the dataset.
 
-## Outcome variables
+The delay dataset reflects real-world phenomena, recorded and processed as follows:
 
-Add graphs, tables and text. Use sub-sub-headings for each outcome variable or update the subheading to be singular.
+- **Incident Type**: Each delay is categorized based on TTC staff reports (e.g., "Mechanical Issue," "Security," "Diversion"). These entries represent events directly impacting bus operations.
+- **Day of the Week**: Categorical entries identify the day the delay occurred, encoded as "Monday" through "Sunday."
+- **Inter-Bus Gap (`min_gap`)**: Calculated from sequential bus schedules, this variable represents the time between consecutive buses.
+- **Delay Duration (`min_delay`)**: Measured in minutes, representing the response variable.
 
+Measurement precision depends on TTC operational standards, with some potential for reporting bias or incomplete data due to manual entry.
 
+## Outcome Variables
 
-Some of our data is of penguins (@fig-bills), from @palmerpenguins.
+The primary outcome variable in this study is the delay duration, denoted as min_delay. This variable captures the total time (in minutes) by which a bus deviates from its scheduled arrival time. It serves as a direct measure of the system's reliability and efficiency, providing a quantitative basis for understanding the impact of various factors on transit delays.
 
-```{r}
-#| label: fig-bills
-#| fig-cap: Bills of penguins
-#| echo: false
+### Distribution of Delay Duration
 
-ggplot(penguins, aes(x = island, fill = species)) +
-  geom_bar(alpha = 0.8) +
-  scale_fill_manual(values = c("darkorange","purple","cyan4"),
-                    guide = "none") +
-  theme_minimal() +
-  facet_wrap(~species, ncol = 1) +
-  coord_flip()
-```
-
-Talk more about it.
-
-And also planes (@fig-planes). (You can change the height and width, but don't worry about doing that until you have finished every other aspect of the paper - Quarto will try to make it look nice and the defaults usually work well once you have enough text.)
+The distribution of delay durations is shown in @fig-delay-distribution. Most delays are under 20 minutes, with a small proportion of extreme outliers exceeding 60 minutes.
 
 ```{r}
-#| label: fig-planes
-#| fig-cap: Relationship between wing length and width
+#| label: fig-delay-distribution
+#| fig-cap: Distribution of bus delay durations.
 #| echo: false
-#| warning: false
-#| message: false
 
-analysis_data <- read_csv(here::here("data/02-analysis_data/analysis_data.csv"))
-
-analysis_data |> 
-  ggplot(aes(x = width, y = length)) +
-  geom_point(alpha = 0.8) +
-  theme_minimal() +
-  labs(x = "Wing width (mm)",
-       y = "Wing length (mm)")
+ggplot(analysis_reduced, aes(x = min_delay)) +
+  geom_histogram(binwidth = 5, fill = "blue", color = "black", alpha = 0.7) +
+  labs(title = "Distribution of Bus Delays", x = "Delay Duration (minutes)", y = "Frequency") +
+  theme_minimal()
 ```
 
-Talk way more about it. 
+The distribution of delay duration (min_delay) is a critical aspect of understanding transit reliability. In this study, min_delay represents the total time (in minutes) by which a bus deviates from its scheduled arrival time. Analysis of its distribution reveals key patterns that inform both the scale of delays and the operational factors contributing to them.
+
+The distribution of delay duration is heavily right-skewed, with the majority of delays clustering under 20 minutes. This reflects the typical variability in public transit schedules due to minor disruptions such as slight traffic congestion or operational inefficiencies. However, the tail of the distribution includes significant delays, often exceeding 60 minutes, which are usually associated with more severe incidents such as mechanical breakdowns, road closures, or major security events. From an operational perspective, the clustering of shorter delays suggests that while most disruptions are manageable, the cumulative effect of frequent small delays can still degrade overall service reliability. Meanwhile, the relatively fewer but more severe delays underscore the need for targeted interventions to mitigate high-impact incidents, particularly those related to mechanical issues and security events.
+
+### Delay by Day of the Week
+
+As shown in @fig-delay-day, delays vary by day of the week. Weekdays exhibit longer average delays due to higher operational loads and traffic congestion, while weekends experience shorter delays. This pattern highlights the potential impact of demand fluctuations on transit performance.
+
+```{r}
+#| label: fig-delay-day
+#| fig-cap: Average bus delays by day of the week.
+#| echo: false
+
+ggplot(analysis_reduced, aes(x = day, y = min_delay)) +
+  stat_summary(fun = "mean", geom = "bar", fill = "orange", color = "black") +
+  labs(title = "Average Delay by Day of the Week", x = "Day", y = "Average Delay (minutes)") +
+  theme_minimal()
+```
+The analysis of delay durations by day of the week reveals distinct temporal patterns that offer insights into transit operations. Delays tend to be shorter on weekends compared to weekdays, with Saturday and Sunday experiencing average delays approximately 1–1.5 minutes shorter than Mondays. This reduction in delays on weekends likely reflects lower passenger demand, reduced traffic congestion, and fewer operational pressures compared to weekdays. In contrast, weekday delays are more pronounced, driven by peak-hour traffic and higher service loads. These findings suggest that transit reliability varies significantly by day, highlighting the need for weekday-specific strategies such as dynamic scheduling and resource allocation to mitigate peak-period delays. Understanding these temporal trends can help transit authorities optimize service delivery and improve overall efficiency.
+
+### Delay vs. Inter-Bus Gap
+
+Inter-bus gaps (min_gap) strongly correlate with delays, as shown in @fig-gap-delay. Longer gaps between buses often lead to greater delays.
+
+```{r}
+#| label: fig-gap-delay
+#| fig-cap: Relationship between inter-bus gaps and delays.
+#| echo: false
+
+ggplot(analysis_reduced, aes(x = min_gap, y = min_delay)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm", formula = y ~ x, color = "red") +
+  labs(
+    x = "Inter-Bus Gap (minutes)",
+    y = "Delay Duration (minutes)",
+    title = "Relationship Between Delays and Inter-Bus Gaps"
+  ) +
+  theme_minimal()
+```
+Longer gaps between buses often lead to greater delays. The linear trend emphasizes the importance of maintaining consistent schedules.The relationship between delays and inter-bus gaps (min_gap) highlights the critical role of scheduling efficiency in transit operations. Analysis shows a strong positive correlation, where longer gaps between consecutive buses are associated with increased delay durations. This relationship, as visualized in @fig-gap-delay, emphasizes that irregular bus arrivals contribute significantly to service disruptions. The linear trend observed suggests that maintaining consistent schedules and minimizing inter-bus gaps can effectively reduce delays. These findings underscore the importance of real-time monitoring and adjustments to bus schedules, ensuring more uniform service intervals and enhancing overall transit reliability.
 
 ## Predictor variables
 
-Add graphs, tables and text.
+Predictor variables include the type of incident, the day of the week, and inter-bus gaps. These variables are crucial in explaining the observed delay patterns.
 
-Use sub-sub-headings for each outcome variable and feel free to combine a few into one if they go together naturally.
+```{r}
+#| label: fig-incident-delays
+#| fig-cap: Frequency of delays by incident type.
+#| echo: false
 
+ggplot(analysis_reduced, aes(x = incident, fill = incident)) +
+  geom_bar(alpha = 0.8) +
+  labs(title = "Delays by Incident Type", x = "Incident Type", y = "Frequency") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
 
+The predictor variables in this study include the type of incident (incident), the day of the week (day), and the inter-bus gap (min_gap), all of which play a important role in explaining the observed delay patterns. Incident types such as mechanical issues and security events are significant contributors to longer delays, as they often require immediate attention and service adjustments. The day of the week captures temporal trends, with shorter delays on weekends compared to weekdays, reflecting reduced traffic and operational pressures. Finally, inter-bus gaps, a measure of scheduling efficiency, are strongly correlated with delay durations, where larger gaps lead to more significant delays. These variables collectively provide a framework for analyzing the factors influencing bus delays and identifying possible strategies to improve transit performance.
 
-
-
-
-
+\newpage
 
 # Model
 
-The goal of our modelling strategy is twofold. Firstly,...
-
-Here we briefly describe the Bayesian analysis model used to investigate... Background details and diagnostics are included in [Appendix -@sec-model-details].
+The primary goal of the modeling process is to identify and quantify the factors influencing bus delays in Toronto. By employing a Bayesian regression approach, we aim to estimate the relationship between delay duration (min_delay) and key predictors, including the type of incident (incident), the day of the week (day), and the inter-bus gap (min_gap). This model allows us to incorporate uncertainty and prior knowledge while providing interpretable results to guide operational improvements.
 
 ## Model set-up
 
-Define $y_i$ as the number of seconds that the plane remained aloft. Then $\beta_i$ is the wing width and $\gamma_i$ is the wing length, both measured in millimeters.  
+The delay duration for each observation $y_i$ is modeled as a function of key predictors using a Bayesian regression framework. The hierarchical structure of the model is specified as follows:
 
 \begin{align} 
 y_i|\mu_i, \sigma &\sim \mbox{Normal}(\mu_i, \sigma) \\
-\mu_i &= \alpha + \beta_i + \gamma_i\\
+\mu_i &= \alpha + \beta x_i + \gamma_{\text{incident}, i} + \delta_{\text{day}, i} \\
 \alpha &\sim \mbox{Normal}(0, 2.5) \\
 \beta &\sim \mbox{Normal}(0, 2.5) \\
-\gamma &\sim \mbox{Normal}(0, 2.5) \\
+\gamma_{\text{incident}} &\sim \mbox{Normal}(0, 2.5) \\
+\delta_{\text{day}} &\sim \mbox{Normal}(0, 2.5) \\
 \sigma &\sim \mbox{Exponential}(1)
 \end{align}
 
-We run the model in R [@citeR] using the `rstanarm` package of @rstanarm. We use the default priors from `rstanarm`.
+In this case:
+\begin{itemize}
+    \item $\alpha$: Intercept representing the baseline delay duration.
+    \item $\beta$: Coefficient for the inter-bus gap ($x_i$), indicating how delays increase as gaps widen.
+    \item $\gamma_{\text{incident}}$: Coefficients for delay incident types, capturing their individual effects on delays.
+    \item $\delta_{\text{day}}$: Coefficients for days of the week, representing how delays vary across weekdays and weekends.
+    \item $\sigma$: Standard deviation of the delay durations, capturing residual variability.
+\end{itemize}
+
+This structure captures both the additive effects of the predictors and their contributions to the variability in delay durations. The use of weakly informative priors Normal(0, 2.5)ensures the model remains flexible while avoiding overfitting.
+
+## Model Implementation
+
+The model is implemented in R using the `stan_glm` function from the `rstanarm` package. The following specifications were used:
+
+- **Predictors:** Incident type (incident), day of the week (day), and inter-bus gap (min_gap).
+- **Outcome:** Delay duration (min_delay).
+- **Priors:** Weakly informative normal priors for coefficients and an exponential prior for the standard deviation ($\sigma$).
+- **Chains and Iterations:** The model was run with 4 chains, each consisting of 2,000 iterations, with the first 1,000 used for warm-up.
+- **Seed:** A fixed seed of 987 ensures reproducibility.
+
+## Model justification
+
+A Bayesian regression model was selected for its ability to handle uncertainty and incorporate prior information. This approach is particularly valuable in public transit analysis, where delays are influenced by a combination of consistent factors (e.g. scheduling) and unpredictable events (e.g. incidents). The inclusion of weakly informative priors ensures stability in parameter estimation while allowing the data to drive the results. By quantifying the effects of incident types, temporal patterns, and scheduling efficiency, the model provides actionable insights for improving transit operations.
+
+The predictors included in the model were selected based on exploratory analysis and domain knowledge:
+
+- **Incident Type ($\gamma_{\text{incident}}$):** Incidents such as mechanical issues and security problems are known to contribute significantly to delays. The model accounts for these factors to explain variability in delay durations.
+- **Day of the Week ($\delta_{\text{day}}$):** Operational dynamics differ across weekdays and weekends. For example, higher passenger volumes on weekdays may lead to longer delays.
+- **Inter-Bus Gap ($\beta$):** Larger gaps between consecutive buses are hypothesized to increase delays due to scheduling inefficiencies.
 
 
-### Model justification
-
-We expect a positive relationship between the size of the wings and time spent aloft. In particular...
-
-We can use maths by including latex between dollar signs, for instance $\theta$.
+The Gaussian likelihood with identity link function was chosen based on the continuous nature of the response variable ($y_i$). While delay durations exhibit some right skewness, the model sufficiently captures the central tendency and variability of the data. By prioritizing interpretability and convergence, the model provides actionable insights into factors driving bus delays while remaining computationally efficient.
 
 
 # Results
 
-Our results are summarized in @tbl-modelresults.
-
-```{r}
-#| echo: false
-#| eval: true
-#| warning: false
-#| message: false
-
-library(rstanarm)
-
-first_model <-
-  readRDS(file = here::here("models/first_model.rds"))
-```
+This section summarizes the findings from the Bayesian regression model used to analyze bus delays in Toronto. The model evaluates the effects of incident type (`incident`), day of the week (`day`), and inter-bus gap (`min_gap`) on delay durations (`min_delay`).
 
 ```{r}
 #| echo: false
 #| eval: true
 #| label: tbl-modelresults
-#| tbl-cap: "Explanatory models of flight time based on wing width and wing length"
+#| tbl-cap: Posterior estimates for key predictors of bus delays in r.
+#| fig-env: table
+#| fig-pos: H
 #| warning: false
+#| message: false
 
+delay_model <- readRDS(file = here::here("models/bus_delay_model.rds"))
+
+# Customize coefficients to display
 modelsummary::modelsummary(
-  list(
-    "First model" = first_model
+  list("Bayesian Regression Model" = delay_model),
+  coef_map = c(
+    "(Intercept)" = "Intercept (Baseline)",
+    "min_gap" = "Inter-Bus Gap",
+    "incidentMechanical Issue" = "Mechanical Issue",
+    "incidentSecurity" = "Security Incident",
+    "daySaturday" = "Saturday",
+    "daySunday" = "Sunday"
   ),
-  statistic = "mad",
+  statistic = "mad", # Use mean and MAD_SD for Bayesian models
   fmt = 2
 )
+
 ```
 
+\newpage
 
+## Interpretation of Results
+
+The Bayesian regression model highlights actionable patterns in bus delays:
+
+- **Operational Factors**: Inter-bus gaps have the largest direct impact on delays, emphasizing the importance of maintaining consistent and evenly spaced schedules.
+
+- **Incident-Specific Delays**: Delays caused by incidents, such as mechanical issues and security problems, underline the need for targeted interventions. Strategies like improving mechanical reliability and responding more quickly to security events can significantly reduce delays.
+
+- **Temporal Trends**: Weekday delays are more pronounced than those on weekends, suggesting that weekday-specific strategies, particularly during peak times, may be necessary to address higher demand and operational pressures.
+
+## Key Findings
+
+The Bayesian regression model provides important insights into the factors influencing bus delays. Below are the key findings based on the posterior median estimates and their associated uncertainty:
+
+- **Inter-Bus Gap**: Longer gaps between consecutive buses are strongly associated with increased delay durations. For every additional minute of inter-bus gap (`min_gap`), delays increase by approximately 0.87 minutes.
+
+- **Incident Types**:
+  - *Mechanical Issues*: This is the most impactful incident type, increasing delays by an average of 2.78 minutes compared to other incidents.
+  - *Security Incidents*: Also significant, contributing approximately 1.96 additional minutes of delay.
+
+- **Day of the Week**: Delays are consistently shorter on weekends compared to weekdays. Both Saturday and Sunday reduce delays by approximately 1.5 minutes, reflecting reduced traffic and operational pressures on these days.
+
+These findings emphasize the critical role of scheduling and incident management in minimizing delays. Consistent inter-bus intervals are particularly impactful, while targeted strategies for addressing mechanical and security incidents could further improve reliability. Additionally, weekday-specific interventions may help reduce delays during peak demand periods.
+
+## Summary
+
+The Bayesian regression model provides key insights into the factors influencing bus delays in Toronto. Among incident types, mechanical issues have the most substantial impact, with an average increase of approximately 2.78 minutes in delay durations compared to incidents categorized as "Not Specified." This highlights the critical need for proactive maintenance strategies to minimize service disruptions caused by vehicle malfunctions. Security-related incidents also significantly contribute to delays, with an average increase of 1.94 minutes, suggesting that enhanced safety protocols or faster response measures could help reduce their impact. The day of the week plays a notable role, with weekends showing shorter delays relative to weekdays. For example, delays on Saturdays and Sundays are approximately 1.23 and 1.45 minutes shorter, respectively, likely due to lower traffic volumes and operational demands during these days. Finally, inter-bus gaps exhibit a strong positive relationship with delay durations. For every one-minute increase in the gap between buses, delays increase by about 0.87 minutes on average, underscoring the importance of maintaining consistent scheduling. These findings collectively emphasize that addressing mechanical reliability, optimizing weekday operations, and improving schedule adherence are key strategies for reducing bus delays and enhancing the reliability of public transit services.
 
 
 # Discussion
 
-## First discussion point {#sec-first-point}
-
-If my paper were 10 pages, then should be be at least 2.5 pages. The discussion is a chance to show off what you know and what you learnt from all this. 
-
-## Second discussion point
-
-Please don't use these as sub-heading labels - change them to be what your point actually is.
-
-## Third discussion point
-
-## Weaknesses and next steps
-
-Weaknesses and next steps should also be included.
+This study offers valuable findings on the factors that affect bus delays in Toronto with emphasis on the role of incident types, temporal patterns and scheduling inefficiencies. Mechanical issues were found to be the most critical incident type affecting the delays and increased the delays by 2.78 minutes on an average as compared to the baseline category showing the importance of developing efficient maintenance strategies and predictive maintenance techniques to avoid breakdowns and minimize delays. Security related incidents were also found to cause huge delays thus underlining the need to enhance safety measures and the response system to minimize effects on reliability of the system. The analysis of temporal patterns showed that delays are usually shorter on weekends than on weekdays and this might be because of less traffic congestion as well as fewer passengers on the bus. This trend indicates the possibilities to enhance the effectiveness of the week. The correlation activities between and inter-bus staffing gaps and and delays duration is also meet supports the importance of schedule in guaranteeing the reliability of transit; this means that for every minute that is added to inter-bus gaps, delays also rise by 0.87 minutes. This implies that there is need to implement real time schedule modifications and monitoring systems to control variation in bus arrival times and to enhance the efficiency of the system. However, this study has some factors, which may be considered as the limitations of the study. Other variables that could have included such as weather, condition, traffic jam, and special events were not included in the analysis and this may have left out important factors that could have influenced delay Timer. Also, the model was rather simple and included only three key predictors and used a random sample of 2,000 observations, which may pose a limitation to the transferability of the findings to all the transit network. Future research could help to overcome these limitations by incorporating extraneous variables into the analysis, and using hierarchical models that data allows and also help in examining overcoming the effects of interactions of the route on predictors to gain a better understanding of why delay happens. Real time data could also be incorporated in the application of the predictive models so that transit authorities can be able to adapt to changes and manage the system in real time. Nonetheless, this research makes a useful contribution to the knowledge on transit delay and provides recommendations for enhancing bus reliability. This paper identifies mechanical problems, security problems, and inter-bus distance as the main causes of delay; therefore, transit agencies should focus on maintenance, safety, and data-based scheduling and resource management. Weekend delay patterns also provide food for thought on how operational strategies could be adjusted to suit demand patterns. In particular, these findings can be used as a basis for identification of targeted measures which need to be taken in order to enhance the reliability of public transportation systems in Toronto and other cities.
 
 \newpage
 
-\appendix
+# Appendix
 
-# Appendix {-}
+## Data Preprocessing
 
-
-# Additional data details
-
-# Model details {#sec-model-details}
-
-## Posterior predictive check
-
-In @fig-ppcheckandposteriorvsprior-1 we implement a posterior predictive check. This shows...
-
-In @fig-ppcheckandposteriorvsprior-2 we compare the posterior with the prior. This shows... 
-
-```{r}
-#| eval: true
-#| echo: false
-#| message: false
-#| warning: false
-#| label: fig-ppcheckandposteriorvsprior
-#| layout-ncol: 2
-#| fig-cap: "Examining how the model fits, and is affected by, the data"
-#| fig-subcap: ["Posterior prediction check", "Comparing the posterior with the prior"]
-
-pp_check(first_model) +
-  theme_classic() +
-  theme(legend.position = "bottom")
-
-posterior_vs_prior(first_model) +
-  theme_minimal() +
-  scale_color_brewer(palette = "Set1") +
-  theme(legend.position = "bottom") +
-  coord_flip()
-```
-
-## Diagnostics
-
-@fig-stanareyouokay-1 is a trace plot. It shows... This suggests...
-
-@fig-stanareyouokay-2 is a Rhat plot. It shows... This suggests...
-
-```{r}
-#| echo: false
-#| eval: true
-#| message: false
-#| warning: false
-#| label: fig-stanareyouokay
-#| fig-cap: "Checking the convergence of the MCMC algorithm"
-#| fig-subcap: ["Trace plot", "Rhat plot"]
-#| layout-ncol: 2
-
-plot(first_model, "trace")
-
-plot(first_model, "rhat")
-```
+The dataset, sourced from the Toronto Transit Commission (TTC) Open Data repository, underwent the following preprocessing steps:
+- **Missing Values**: Rows with missing `min_delay` were removed, while `min_gap` values were imputed using the median. Missing incident types were categorized as "Not Specified."
+- **Standardization**: `min_gap` was standardized using z-scores, and categorical variables (`incident`, `day`) were encoded as factors.
+- **Dimensionality Reduction**: Locations with low representation were grouped into "Other" to simplify modeling.
+- **Sampling**: A random sample of 2,500 records was used for computational efficiency.
 
 
+## Study Limitations and Future Work
+
+This analysis excludes external factors such as weather and traffic conditions and does not account for route-specific effects. Future research should incorporate these variables and explore hierarchical models or real-time prediction systems for dynamic scheduling and decision-making.
+
+## Metrics Explanation For Bayesian Model
+
+- **Num.Obs. (Number of Observations)**: The total number of data points used to train the model. In this case, 2,000 observations were included in the analysis.
+
+- **R\(^2\) and R\(^2\) Adjusted**:
+  - R\(^2\): Represents the proportion of variance in the dependent variable (`min_delay`) explained by the predictors. A high R\(^2\) (0.970) indicates that the model captures the majority of variability in bus delays.
+  - Adjusted R\(^2\): Similar to R\(^2\) but penalizes for the number of predictors included in the model to prevent overfitting.
+
+- **Log.Lik. (Log-Likelihood)**: Reflects how well the model fits the data. A higher (less negative) log-likelihood value indicates better model fit. Here, the value is \(-7489.402\).
+
+- **ELPD (Expected Log Predictive Density)**:
+  - Evaluates the model's predictive performance for new, unseen data. More negative values indicate worse predictive performance. In this model, ELPD is \(-7539.1\).
+  - **ELPD s.e.**: The standard error associated with the ELPD metric (\(264.4\)) quantifies the uncertainty in this estimate.
+
+- **LOOIC (Leave-One-Out Information Criterion)**:
+  - A Bayesian metric similar to cross-validation, estimating the model's out-of-sample predictive accuracy. Lower values indicate better performance (\(15078.1\)).
+  - **LOOIC s.e.**: The standard error associated with LOOIC (\(528.9\)) reflects the uncertainty in this measure.
+
+- **WAIC (Watanabe-Akaike Information Criterion)**:
+  - Another Bayesian model evaluation metric assessing goodness of fit and model complexity. A lower WAIC (\(15102.6\)) indicates a better model.
+
+- **RMSE (Root Mean Square Error)**:
+  - Measures the average magnitude of the residuals, or prediction errors. An RMSE of \(10.22\) suggests that, on average, the model's predictions deviate from observed delays by 10.22 minutes.
 
 \newpage
 
