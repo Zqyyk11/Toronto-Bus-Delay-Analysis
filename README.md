@@ -38,4 +38,4 @@ The LLM was used in the following ways:
 - **Technical Explanations**: Supported the development of clear and concise explanations of the methodology, findings, and model diagnostics.
 - **Quarto and LaTeX Integration**: Offered guidance on formatting equations, tables, and figures within the Quarto `.qmd` document.
 
-The entrie chat history can be found inside others/llms/usage.txt.
+The entrie chat history can be found inside `others/llms/usage.txt`.
