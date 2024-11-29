@@ -1,11 +1,13 @@
 #### Preamble ####
-# Purpose: Tests... [...UPDATE THIS...]
-# Author: Rohan Alexander [...UPDATE THIS...]
-# Date: 26 September 2024 [...UPDATE THIS...]
-# Contact: rohan.alexander@utoronto.ca [...UPDATE THIS...]
+# Purpose: Performs quality assurance tests on the cleaned bus delay dataset to 
+#          ensure data integrity, logical consistency, and readiness for analysis.
+# Author: Charlie Zhang
+# Date: 28th November 2024
+# Contact: zqycharlie.zhang@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: [...UPDATE THIS...]
-# Any other information needed? [...UPDATE THIS...]
+# Pre-requisites: The `testthat` and `tidyverse` packages must be installed.
+# Any other information needed? Ensure the cleaned data is located in the 
+#          `data/02-analysis_data` folder.
 
 
 #### Workspace setup ####

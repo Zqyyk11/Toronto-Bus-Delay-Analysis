@@ -1,11 +1,13 @@
 #### Preamble ####
-# Purpose: Cleans the raw plane data recorded by two observers..... [...UPDATE THIS...]
-# Author: Rohan Alexander [...UPDATE THIS...]
-# Date: 6 April 2023 [...UPDATE THIS...]
-# Contact: rohan.alexander@utoronto.ca [...UPDATE THIS...]
+# Purpose: Cleans and preprocesses the raw bus delay data, including handling 
+#          missing values, formatting columns, and creating a cleaned dataset.
+# Author: Charlie Zhang
+# Date: 28th November 2024
+# Contact: zqycharlie.zhang@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: [...UPDATE THIS...]
-# Any other information needed? [...UPDATE THIS...]
+# Pre-requisites: The `tidyverse`, `janitor`, and `lubridate` packages must be installed.
+# Any other information needed? Ensure the raw data is located in the 
+#          `data/01-raw_data` folder and the cleaned data is saved to `data/02-analysis_data`.
 
 #### Workspace setup ####
 # Install and load required libraries

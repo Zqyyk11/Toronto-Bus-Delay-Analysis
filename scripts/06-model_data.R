@@ -1,11 +1,14 @@
 #### Preamble ####
-# Purpose: Models... [...UPDATE THIS...]
-# Author: Rohan Alexander [...UPDATE THIS...]
-# Date: 11 February 2023 [...UPDATE THIS...]
-# Contact: rohan.alexander@utoronto.ca [...UPDATE THIS...]
+# Purpose: Fits a Bayesian regression model to the cleaned bus delay dataset 
+#          to identify factors influencing delays, and saves the fitted model.
+# Author: Charlie Zhang
+# Date: 28th November 2024
+# Contact: zqycharlie.zhang@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: [...UPDATE THIS...]
-# Any other information needed? [...UPDATE THIS...]
+# Pre-requisites: The `rstanarm`, `tidyverse`, and `posterior` packages must be installed.
+# Any other information needed? Ensure the cleaned data is located in the 
+#          `data/02-analysis_data` folder and that the fitted model is saved to the `model` folder.
+
 
 
 #### Workspace setup ####

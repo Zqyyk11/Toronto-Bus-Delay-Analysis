@@ -1,19 +1,19 @@
 #### Preamble ####
-# Purpose: Tests the structure and validity of the simulated Australian 
-  #electoral divisions dataset.
-# Author: Rohan Alexander
-# Date: 26 September 2024
-# Contact: rohan.alexander@utoronto.ca
+# Purpose: Tests the simulated dataset of bus delays to ensure data quality 
+#          and compatibility with the analysis pipeline.
+# Author: Charlie Zhang
+# Date: 28th November 2024
+# Contact: zqycharlie.zhang@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: 
-  # - The `tidyverse` package must be installed and loaded
-  # - 00-simulate_data.R must have been run
-# Any other information needed? Make sure you are in the `starter_folder` rproj
+# Pre-requisites: The `dplyr` and `tidyverse` packages must be installed.
+# Any other information needed? Ensure the simulated data is located in the 
+#          `data/00-simulated_data` folder.
 
 
 #### Workspace setup ####
 #### Load Required Libraries ####
 library(dplyr)
+library(tidyverse)
 
 #### Load the Simulated Dataset ####
 file_path <- "data/00-simulated_data/simulated_ttc_bus_delay_data.csv"  

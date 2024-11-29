@@ -1,12 +1,13 @@
 #### Preamble ####
-# Purpose: Simulates a dataset of Australian electoral divisions, including the 
-  #state and party that won each division.
-# Author: Rohan Alexander
-# Date: 26 September 2024
-# Contact: rohan.alexander@utoronto.ca
+# Purpose: Simulates a dataset of bus delays, including the incident type, 
+#          day of the week, and inter-bus gap for each simulated bus.
+# Author: Charlie Zhang
+# Date: 28th November 2024
+# Contact: zqycharlie.zhang@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: The `tidyverse` package must be installed
-# Any other information needed? Make sure you are in the `starter_folder` rproj
+# Pre-requisites: The `tidyverse` and `lubridate` packages must be installed
+# Any other information needed? Ensure the working directory is set to the 
+#          project folder containing the scripts and data subfolders.
 
 
 #### Workspace setup ####

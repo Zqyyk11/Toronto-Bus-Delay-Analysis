@@ -1,12 +1,14 @@
 #### Preamble ####
-# Purpose: Models... [...UPDATE THIS...]
-# Author: Rohan Alexander [...UPDATE THIS...]
-# Date: 11 February 2023 [...UPDATE THIS...]
-# Contact: rohan.alexander@utoronto.ca [...UPDATE THIS...]
+# Purpose: Performs exploratory data analysis (EDA) on the cleaned bus delay dataset, 
+#          including visualizations and summary statistics to identify key patterns 
+#          and trends.
+# Author: Charlie Zhang
+# Date: 28th November 2024
+# Contact: zqycharlie.zhang@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: [...UPDATE THIS...]
-# Any other information needed? [...UPDATE THIS...]
-
+# Pre-requisites: The `tidyverse` and `ggplot2` packages must be installed.
+# Any other information needed? Ensure the cleaned data is located in the 
+#          `data/02-analysis_data` folder.
 
 #### Workspace setup ####
 library(tidyverse)
