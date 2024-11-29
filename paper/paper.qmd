@@ -23,6 +23,8 @@ library(ggplot2)
 library(rstanarm)
 library(here)
 library(modelsummary)
+library(lubridate)
+library(dplyr)
 
 analysis_reduced <- read_csv(here::here("data/02-analysis_data/bus_delay_clean_data_2023.csv"))
 ```
@@ -43,8 +45,8 @@ By narrowing the focus to the most impactful variables and using a Bayesian appr
 # Data {#sec-data}
 
 ## Overview
-  We use the statistical programming language R [@citeR] to analyze TTC bus delay data obtained from Toronto’s open data repository [@TTCData]. This dataset captures transit delays recorded by the Toronto Transit Commission (TTC) and includes information on delay causes (e.g., mechanical issues, security), day of the week, and inter-bus gaps. Following the guidelines outlined in @tellingstories, we carefully preprocess and explore the data before modeling.
-To conduct the analysis, we utilized several R libraries that facilitated data preprocessing, modeling, and visualization. The tidyverse [@tidyverse] provided a comprehensive suite of tools for data manipulation and visualization, with dplyr[@dplyr] used for data wrangling and ggplot2[@ggplot2] for creating informative visualizations. The readr package [@readr] enabled efficient loading of the dataset into R. For Bayesian modeling, we employed the rstanarm package [@rstanarm], which allowed flexible regression modeling using weakly informative priors via the stan_glm function. The modelsummary package [@modelsummary] was used to generate clean, publication-ready tables of model summaries and posterior estimates, while here [@here] simplified file path management, ensuring compatibility and organization across different systems. Together, these libraries provided a robust framework for handling the data, implementing the Bayesian model, and effectively presenting the results.
+  We use the statistical programming language R [@citeR] to analyze TTC bus delay data obtained from Toronto’s open data repository [@opendatatoronto], more in depth the TTC[@TTCData]. This dataset captures transit delays recorded by the Toronto Transit Commission (TTC) and includes information on delay causes (e.g., mechanical issues, security), day of the week, and inter-bus gaps. Following the guidelines outlined in [@tellingstories], we carefully preprocess and explore the data before modeling.
+To conduct the analysis, we utilized several R libraries that facilitated data preprocessing, modeling, and visualization. The tidyverse [@tidyverse] provided a comprehensive suite of tools for data manipulation and visualization, with dplyr[@dplyr] used for data wrangling and ggplot2[@ggplot2] for creating informative visualizations. Date and time were made easier by lubridate[@lubridate]. The janitor[@janitor] package was used for data cleaning and organizing, testthat[@testthat] ensured data quality and validated the analysis pipeline through unit testing, and posterior[@posterior] facilitated the analysis and summarization of posterior distributions from the Bayesian regression model. The readr package [@readr] enabled efficient loading of the dataset into R. For Bayesian modeling, we employed the rstanarm package [@rstanarm], which allowed flexible regression modeling using weakly informative priors via the stan_glm function. The modelsummary package [@modelsummary] was used to generate clean, publication-ready tables of model summaries and posterior estimates, while here [@here] simplified file path management, ensuring compatibility and organization across different systems. Together, these libraries provided a robust framework for handling the data, implementing the Bayesian model, and effectively presenting the results.
   The dataset consists of over 50,000 records of delay incidents, from which we selected a random subset of 2,500 for computational efficiency. Key predictors include `incident`, `day`, and `min_gap`, with the outcome variable `min_delay`, representing delay duration in minutes.
 
 ## Measurement
